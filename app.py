@@ -4,8 +4,6 @@ from reportlab.lib.colors import Color
 from reportlab.lib.pagesizes import letter
 from RequestBody import RequestBody
 from reportlab.lib.utils import simpleSplit
-from flask import redirect
-from flask import session
 
 import json
 import requests
