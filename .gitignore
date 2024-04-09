@@ -1,0 +1,14 @@
+# Bytecode
+__pycache__/
+*.pyc
+
+# Virtual environment
+myenv/
+.env
+
+# OS specific
+.DS_Store # For MacOS
+
+# IDE specific
+.vscode/ # For Visual Studio Code
+*.swp # For Vim
