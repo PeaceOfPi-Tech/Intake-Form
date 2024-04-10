@@ -7,80 +7,118 @@ from reportlab.lib.utils import simpleSplit
 
 import json
 import requests
+import os
 
+asset_protection = False
+probate_intake = False
 app = Flask(__name__)
 app.debug = True
 @app.route('/webhook', methods=['POST'])
 def webhook():
     
     data = request.get_json()
+    if data.get("contact_source") =="asset protection trust intake form":
+        global asset_protection
+        asset_protection = True
+    elif data.get("contact_source") != "Online Case Eval. Submission":
+        global probate_intake 
+        probate_intake = True 
+
     formatted_data = RequestBody(data) 
 
     create_pdf(formatted_data) 
     send_pdf_to_zapier("output.pdf",formatted_data.attributes)
+
+    os.remove("output.pdf") 
     return jsonify({"status": "ok", "data": data}),200
 
 
 def create_pdf(data):
     font_name = "Helvetica"
     font_size = 12
-    
-    #Insert image into pdf on the top left corne
-    try:
-        c = canvas.Canvas("output.pdf", pagesize=letter)
-        c.drawImage("title.jpeg", 25,700)
-        c.setFont(font_name, font_size)
-    except Exception as e:
-        print("Error: ", e)
-        return jsonify({"status": "error", "message": "Error while creating pdf"}), 500
+
+    c = canvas.Canvas("output.pdf", pagesize=letter)
+    c.drawImage("title.jpeg", 25,700)
+    c.setFont(font_name, font_size)
     
     y = 680
     for key,value in data.items():
+        if key == "Contact ID" or key == "contact_source":
+            continue
         if y < 20:
             c.showPage()
             y = 750
+        if isinstance(value, list):
+            value = ", ".join(value)
+            
         add_form_label(key,value,50,y,c)
+       
         y -= 50
+    c.showPage() 
+    if asset_protection:
+        for key,value in data.assetProtection.items():
+            if y < 20:
+                c.showPage()
+                y = 750
+            if isinstance(value, list):
+                value = ", ".join(value)
+            add_form_label(key,value,50,y,c)
+            y -= 50
+    if probate_intake:
+        for key,value in data.probateIntake.items():
+            if y < 20:
+                c.showPage()
+                y = 750
+            if isinstance(value, list):
+                value = ", ".join(value)
+            add_form_label(key,value,50,y,c)
+            y -= 50
 
     c.save()    
 
 def add_form_label(field_name,field_value, x, y, c):
-    
     width = 500
     height = 25 
     radius = 10
     y_for_rect = y-25
     font_name = "Helvetica"
     font_size = 12
-    text_width = c.stringWidth(field_value, font_name, font_size)
-    if field_name == "More Detail/Notes":
-        height = 50
-        y_for_rect -= 25
+    field_value_str = str(field_value) if field_value is not None else ""
+    text_width = c.stringWidth(field_value_str, font_name, font_size)
+
+        
 
     fill_color = Color(0,0,0,alpha=0.5)
     c.setStrokeColor(fill_color)
     field_name = field_name + ":"
+    #draw name
     c.drawString(x+4, y+5, field_name)
-
-    if text_width > 400:
-        lines = simpleSplit(field_value, font_name, font_size,width)
+    #draw value
+    if text_width > width -50:
+        height = 50
+        y_for_rect -= 25
+        lines = simpleSplit(field_value_str, font_name, font_size,width)
         # used to make a biggere rectangle dependent on the number of lines
         for line in lines:
             c.drawString(x+4, y-17, line)
             y -= 10
             y_for_rect = y-50
             height += 10
+        
+        y-=50
     else:
-        c.drawString(x+4, y-17, field_value)
+        c.drawString(x+4, y-17, field_value_str)
 
+    #draw rectangle
     c.roundRect(x, y_for_rect, width, height, radius, stroke=1, fill=0)
 
+    
+
 def send_pdf_to_zapier(pdf_path,customerData):
-    customer_name = customerData.get("Full Name")
-    customer_email = customerData.get("Email")
-    contact_id = customerData.get("Contact ID")
-    print("customer name: ",customer_name)
-    print("customer email: ",customer_email)
+    customer_name = customerData.get("Full Name"," ")
+    customer_email = customerData.get("Email"," ")
+    contact_id = customerData.get("Contact ID"," ")
+    
     url = "https://hooks.zapier.com/hooks/catch/16299933/3p0pd3l/"
     with open(pdf_path, 'rb') as pdf:
         files = {'file': (
