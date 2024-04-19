@@ -29,12 +29,9 @@ class RequestBody:
             "Child (2) Name": data.get("Child (2) Name"),
             "Child (2) DOB": data.get("Child (2) DOB"),
             "Child (2) Status": data.get("Child (2) Status"),
-            "Child (3) Name": data.get("Child (3) Name"),
-            "Child (3) DOB": data.get("Child (3) DOB"),
-            "Child (3) Status": data.get("Child (3) Status"),
             "How did you hear about us? Radio Type": data.get("How did you hear about us? Radio Type"),
             "Type of legal work you would like us to help with: Checkbox": data.get("Type of legal work you would like us to help with: Checkbox"),
-            "Type of legal work you would like us to help with:": data.get("Type of legal work you would like us to help with:"),
+            "Type of legal work you would like us to help with": data.get("Type of legal work you would like us to help with:"),
             "More Detail/Notes": data.get("More Details/Notes"),
             "Contact ID": data.get("contact_id"),
             "contact_source": data.get("contact_source")
