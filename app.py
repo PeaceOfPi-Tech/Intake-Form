@@ -16,11 +16,6 @@ app.debug = True
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    access_token_2 = "a6bd077b-02ea-47d9-94e6-4dfcc33d9ed9"
-    access_token = "2092060b-b7b3-492a-abb9-5e305f41dfb3"
-    location_id = "yPsOXmmCcVaa9JZxtxU3"
-    custom_field_id = "{{ contact.intake_form }}"
-
     data = request.get_json()
     if data.get("contact_source") =="asset protection trust intake form":
         global asset_protection
@@ -30,20 +25,20 @@ def webhook():
         probate_intake = True 
 
     formatted_data = RequestBody(data) 
+    
+    pdf_title = f"{formatted_data.attributes.get('Full Name','')}intakeform.pdf"
 
-    create_pdf(formatted_data) 
-    send_pdf_to_zapier("output.pdf",formatted_data.attributes)
+    create_pdf(formatted_data,pdf_title) 
+    send_pdf_to_zapier(pdf_title,formatted_data.attributes)
 
-    #send_pdf_to_gohighlevel("output.pdf",formatted_data.attributes,access_token_2,location_id,custom_field_id)
-    os.remove("output.pdf") 
+    os.remove(pdf_title)
     return jsonify({"status": "ok", "data": data}),200
 
 
-def create_pdf(data):
+def create_pdf(data,pdf_title):
     font_name = "Helvetica"
     font_size = 12
-
-    c = canvas.Canvas("output.pdf", pagesize=letter)
+    c = canvas.Canvas(pdf_title, pagesize=letter)
     c.drawImage("title.jpeg", 25,725,width=200,height=60)
     c.setFont(font_name, font_size)
     
@@ -54,7 +49,8 @@ def create_pdf(data):
             continue
         if y < 20:
             c.showPage()
-            y = 750
+            c.drawImage("title.jpeg", 25,725,width=200,height=60)
+            y = 715
         if isinstance(value, list):
             value = ", ".join(value)
             
@@ -66,7 +62,8 @@ def create_pdf(data):
         for key,value in data.assetProtection.items():
             if y < 20:
                 c.showPage()
-                y = 750
+                c.drawImage("title.jpeg", 25,725,width=200,height=60)
+                y = 715
             if isinstance(value, list):
                 value = ", ".join(value)
             y = add_form_label(key,value,margin_left_x ,y,c)
@@ -76,7 +73,8 @@ def create_pdf(data):
         for key,value in data.probateIntake.items():
             if y < 20:
                 c.showPage()
-                y = 750
+                c.drawImage("title.jpeg", 25,725,width=200,height=60)
+                y = 715
             if isinstance(value, list):
                 value = ", ".join(value)
             y = add_form_label(key,value,margin_left_x,y,c)
