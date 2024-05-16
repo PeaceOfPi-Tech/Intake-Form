@@ -8,34 +8,96 @@ import json
 import requests
 import os
 import uuid
-
+import logging
+ 
 asset_protection = False
 probate_intake = False
+personal_injury = False
+estatePlanning = False
+
 app = Flask(__name__)
 app.debug = True
 
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s: %(message)s')
+logger = logging.getLogger(__name__)
 @app.route('/webhook', methods=['POST'])
 def webhook():
     data = request.get_json()
-    if data.get("contact_source") =="asset protection trust intake form":
-        global asset_protection
-        asset_protection = True
-    elif data.get("contact_source") != "Online Case Eval. Submission":
-        global probate_intake 
-        probate_intake = True 
-
     formatted_data = RequestBody(data) 
     
-    pdf_title = f"{formatted_data.attributes.get('Full Name','')}intakeform.pdf"
+    pdf_title = f"{formatted_data.attributes.get('Full Name','')} intakeform.pdf"
 
     create_pdf(formatted_data,pdf_title) 
     send_pdf_to_zapier(pdf_title,formatted_data.attributes)
 
     os.remove(pdf_title)
+    logger.info("PDF sent to Zapier")
     return jsonify({"status": "ok", "data": data}),200
 
+@app.route('/webhook/general', methods=['POST'])
+def webhook_general():
+    data = request.get_json()
+    formatted_data = RequestBody(data) 
+    
+    pdf_title = f"{formatted_data.attributes.get('Full Name','')} General_Intake_Form.pdf"
+
+    create_pdf(formatted_data,pdf_title) 
+    send_pdf_to_zapier(pdf_title,formatted_data.attributes)
+
+    os.remove(pdf_title)
+    logger.info("PDF sent to Zapier")
+    return jsonify({"status": "ok", "data": data}),200
+#probate intake form
+@app.route('/webhook/probate', methods=['POST'])
+def webhook_probate():
+    global probate_intake
+    probate_intake = True
+
+    data = request.get_json()
+    formatted_data = RequestBody(data)
+    pdf_title = f"{formatted_data.attributes.get('Full Name','')} Probate_Intake_Form.pdf"
+    
+    create_pdf(formatted_data,pdf_title)
+    send_pdf_to_zapier(pdf_title,formatted_data.attributes)
+    
+    os.remove(pdf_title)
+    logger.info("PDF sent to Zapier")
+    return jsonify({"status": "ok", "data": data}),200 
+#personal injury form
+@app.route('/webhook/personalinjury', methods=['POST'])
+def webhook_personal_injury():
+    global personal_injury
+    personal_injury = True 
+
+    data = request.get_json()
+    formatted_data = RequestBody(data)
+    
+    pdf_title = f"{formatted_data.attributes.get('Full Name','')} Personal_Injury_Form.pdf"
+    create_pdf(formatted_data,pdf_title)
+    send_pdf_to_zapier(pdf_title,formatted_data.attributes)
+    
+    os.remove(pdf_title)
+    logger.info("PDF sent to Zapier")
+    return jsonify({"status": "ok", "data": data}),200 
+@app.route('/webhook/estateplanning', methods=['POST'])
+def webhook_estate_planning():
+    global estatePlanning 
+    estatePlanning = True 
+
+    data = request.get_json()
+    formatted_data = RequestBody(data)
+    
+    pdf_title = f"{formatted_data.attributes.get('Full Name','')} Estate_Planning_Form.pdf"
+    create_pdf(formatted_data,pdf_title)
+    send_pdf_to_zapier(pdf_title,formatted_data.attributes)
+    
+    os.remove(pdf_title)
+    logger.info("PDF sent to Zapier")
+    return jsonify({"status": "ok", "data": data}),200 
 
 def create_pdf(data,pdf_title):
+    #Todo: add type of form to top of pdf
     font_name = "Helvetica"
     font_size = 12
     c = canvas.Canvas(pdf_title, pagesize=letter)
@@ -152,7 +214,11 @@ def send_pdf_to_zapier(pdf_path,customerData):
             print("Failed to send to zapier",response.status_code)
             return jsonify({"status": "error", "message": "Error while sending pdf"}), 500
         
-
+        
+        
+        
+            
+# Not using this, Zapier is used to send the pdf to gohighlevel
 def send_pdf_to_gohighlevel(pdf_path, customerData, access_token, location_id, custom_field_id):
     url = 'https://services.leadconnectorhq.com/forms/upload-custom-files'
     
