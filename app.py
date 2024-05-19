@@ -30,10 +30,9 @@ def webhook():
     pdf_title = f"{formatted_data.attributes.get('Full Name','')} intakeform.pdf"
 
     create_pdf(formatted_data,pdf_title) 
-    #TODO: uncomment these two lines for production
-    #send_pdf_to_zapier(pdf_title,formatted_data.attributes)
-    #os.remove(pdf_title)
-    logger.info("PDF sent to Zapier")
+    send_pdf_to_zapier(pdf_title,formatted_data.attributes)
+    os.remove(pdf_title)
+
     return jsonify({"status": "ok", "data": data}),200
 
 @app.route('/webhook/general', methods=['POST'])
@@ -44,11 +43,9 @@ def webhook_general():
     pdf_title = f"{formatted_data.attributes.get('Full Name','')} General_Intake_Form.pdf"
     create_pdf(formatted_data,pdf_title,"Client Intake Form") 
 
-    #TODO: uncomment these two lines for production
-    #send_pdf_to_zapier(pdf_title,formatted_data.attributes)
-    #os.remove(pdf_title)
+    send_pdf_to_zapier(pdf_title,formatted_data.attributes)
+    os.remove(pdf_title)
 
-    logger.info("PDF sent to Zapier")
     return jsonify({"status": "ok", "data": data}),200
 
 #probate intake form
@@ -58,19 +55,15 @@ def webhook_probate():
     probate_intake = True
 
     data = request.get_json()
-    #TODO: Delete this for prod
-    with open("probatedata.json","w") as f:
-        json.dump(data,f) 
         
     formatted_data = RequestBody(data)
     pdf_title = f"{formatted_data.attributes.get('Full Name','')} Probate_Intake_Form.pdf"
     
     create_pdf(formatted_data,pdf_title,"Probate Intake Form")
-    #TODO: uncomment these 2 lines for production
-    # send_pdf_to_zapier(pdf_title,formatted_data.attributes)
-    
-    # os.remove(pdf_title)
-    logger.info("PDF sent to Zapier")
+
+    send_pdf_to_zapier(pdf_title,formatted_data.attributes)
+    os.remove(pdf_title)
+
     return jsonify({"status": "ok", "data": data}),200 
 
 #personal injury form
@@ -84,11 +77,12 @@ def webhook_personal_injury():
     
     pdf_title = f"{formatted_data.attributes.get('Full Name','')} Personal_Injury_Form.pdf"
     create_pdf(formatted_data,pdf_title, "Personal Injury Form")
-    #TODO: uncomment these two lines for production
-    # send_pdf_to_zapier(pdf_title,formatted_data.attributes)
-    # os.remove(pdf_title)
-    logger.info("PDF sent to Zapier")
+
+    send_pdf_to_zapier(pdf_title,formatted_data.attributes)
+    os.remove(pdf_title)
+
     return jsonify({"status": "ok", "data": data}),200 
+
 @app.route('/webhook/estateplanning', methods=['POST'])
 def webhook_estate_planning():
     global estatePlanning 
@@ -99,15 +93,12 @@ def webhook_estate_planning():
     
     pdf_title = f"{formatted_data.attributes.get('Full Name','')} Estate_Planning_Form.pdf"
     create_pdf(formatted_data,pdf_title, "Estate Planning Form")
-    #TODO: uncomment this line for production 
-    # send_pdf_to_zapier(pdf_title,formatted_data.attributes)
-    #os.remove(pdf_title)
+    send_pdf_to_zapier(pdf_title,formatted_data.attributes)
+    os.remove(pdf_title)
 
-    logger.info("PDF sent to Zapier")
     return jsonify({"status": "ok", "data": data}),200 
 
 def create_pdf(data,pdf_title,heading):
-    #Todo: add type of form to top of pdf
     font_name = "Helvetica"
     font_size = 12
     c = canvas.Canvas(pdf_title, pagesize=letter)
@@ -131,7 +122,6 @@ def create_pdf(data,pdf_title,heading):
         y = add_form_label(key,value,margin_left_x,y,c)
        
         #y -= 50
-    #TODO: Add the rest of the forms
         
     if estatePlanning:
         for key,value in data.estatePlanning.items():
@@ -153,7 +143,16 @@ def create_pdf(data,pdf_title,heading):
             y = add_form_label(key,value,margin_left_x,y,c)
 
     elif personal_injury:
-        for key,value in data.probateIntake.items():
+        for key,value in data.personalInjury.items():
+            if y < 20:
+                c.showPage()
+                c.drawImage("title.jpeg", 25,725,width=200,height=60)
+                y = 715
+            if isinstance(value, list):
+                value = ", ".join(value)
+            y = add_form_label(key,value,margin_left_x,y,c)
+
+        for key,value in data.personalInjury_defendent.items():
             if y < 20:
                 c.showPage()
                 c.drawImage("title.jpeg", 25,725,width=200,height=60)
@@ -227,53 +226,9 @@ def send_pdf_to_zapier(pdf_path,customerData):
         response = requests.post(url, files=files,data = data)
         
         if response.status_code == 200:
-            print("PDF sent successfully")
+            logger.info("PDF sent successfully")
             return jsonify({"status": "ok", "message": "PDF sent successfully"}), 200
         else:
-            print("Failed to send to zapier",response.status_code)
+            logger.info("Failed to send to zapier",response.status_code)
             return jsonify({"status": "error", "message": "Error while sending pdf"}), 500
         
-        
-        
-        
-            
-# Not using this, Zapier is used to send the pdf to gohighlevel
-def send_pdf_to_gohighlevel(pdf_path, customerData, access_token, location_id, custom_field_id):
-    url = 'https://services.leadconnectorhq.com/forms/upload-custom-files'
-    
-    # Construct headers and query parameters
-    headers = {
-        'Authorization': f'Bearer {access_token}',
-        'Version': '2021-07-28'
-    }
-    
-    params = {
-        'contactId': customerData.get("Contact ID"," "),
-        'locationId': location_id
-    }
-    
-    # Generate a random file ID (UUID)
-    file_id = uuid.uuid4()
-    
-    # Prepare the files dictionary using the custom field and file ID
-    file_key = f'{custom_field_id}_{file_id}'
-    files = {
-        file_key: ('filename.pdf', open(pdf_path, 'rb'), 'application/pdf')
-    }
-    
-    # Send the POST request
-    response = requests.post(url, headers=headers, params=params, files=files)
-    
-    # Close the file after sending
-    files[file_key][1].close()
-    
-    # Check response
-    if response.status_code == 200:
-        print("PDF uploaded successfully")
-    else:
-        print("Failed to upload PDF:", response.status_code, response.text)
-
-    return response
-
-if __name__ == '__main__':
-    app.run(debug=True)
