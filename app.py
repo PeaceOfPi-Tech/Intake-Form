@@ -9,8 +9,8 @@ import requests
 import os
 import uuid
 import logging
- 
-asset_protection = False
+
+#TODO: Change url is Gohiglevel automation tree to prod url
 probate_intake = False
 personal_injury = False
 estatePlanning = False
@@ -24,14 +24,15 @@ logger = logging.getLogger(__name__)
 @app.route('/webhook', methods=['POST'])
 def webhook():
     data = request.get_json()
+    #write data to a file
     formatted_data = RequestBody(data) 
     
     pdf_title = f"{formatted_data.attributes.get('Full Name','')} intakeform.pdf"
 
     create_pdf(formatted_data,pdf_title) 
-    send_pdf_to_zapier(pdf_title,formatted_data.attributes)
-
-    os.remove(pdf_title)
+    #TODO: uncomment these two lines for production
+    #send_pdf_to_zapier(pdf_title,formatted_data.attributes)
+    #os.remove(pdf_title)
     logger.info("PDF sent to Zapier")
     return jsonify({"status": "ok", "data": data}),200
 
@@ -41,13 +42,15 @@ def webhook_general():
     formatted_data = RequestBody(data) 
     
     pdf_title = f"{formatted_data.attributes.get('Full Name','')} General_Intake_Form.pdf"
+    create_pdf(formatted_data,pdf_title,"Client Intake Form") 
 
-    create_pdf(formatted_data,pdf_title) 
-    send_pdf_to_zapier(pdf_title,formatted_data.attributes)
+    #TODO: uncomment these two lines for production
+    #send_pdf_to_zapier(pdf_title,formatted_data.attributes)
+    #os.remove(pdf_title)
 
-    os.remove(pdf_title)
     logger.info("PDF sent to Zapier")
     return jsonify({"status": "ok", "data": data}),200
+
 #probate intake form
 @app.route('/webhook/probate', methods=['POST'])
 def webhook_probate():
@@ -55,15 +58,21 @@ def webhook_probate():
     probate_intake = True
 
     data = request.get_json()
+    #TODO: Delete this for prod
+    with open("probatedata.json","w") as f:
+        json.dump(data,f) 
+        
     formatted_data = RequestBody(data)
     pdf_title = f"{formatted_data.attributes.get('Full Name','')} Probate_Intake_Form.pdf"
     
-    create_pdf(formatted_data,pdf_title)
-    send_pdf_to_zapier(pdf_title,formatted_data.attributes)
+    create_pdf(formatted_data,pdf_title,"Probate Intake Form")
+    #TODO: uncomment these 2 lines for production
+    # send_pdf_to_zapier(pdf_title,formatted_data.attributes)
     
-    os.remove(pdf_title)
+    # os.remove(pdf_title)
     logger.info("PDF sent to Zapier")
     return jsonify({"status": "ok", "data": data}),200 
+
 #personal injury form
 @app.route('/webhook/personalinjury', methods=['POST'])
 def webhook_personal_injury():
@@ -74,10 +83,10 @@ def webhook_personal_injury():
     formatted_data = RequestBody(data)
     
     pdf_title = f"{formatted_data.attributes.get('Full Name','')} Personal_Injury_Form.pdf"
-    create_pdf(formatted_data,pdf_title)
-    send_pdf_to_zapier(pdf_title,formatted_data.attributes)
-    
-    os.remove(pdf_title)
+    create_pdf(formatted_data,pdf_title, "Personal Injury Form")
+    #TODO: uncomment these two lines for production
+    # send_pdf_to_zapier(pdf_title,formatted_data.attributes)
+    # os.remove(pdf_title)
     logger.info("PDF sent to Zapier")
     return jsonify({"status": "ok", "data": data}),200 
 @app.route('/webhook/estateplanning', methods=['POST'])
@@ -89,19 +98,22 @@ def webhook_estate_planning():
     formatted_data = RequestBody(data)
     
     pdf_title = f"{formatted_data.attributes.get('Full Name','')} Estate_Planning_Form.pdf"
-    create_pdf(formatted_data,pdf_title)
-    send_pdf_to_zapier(pdf_title,formatted_data.attributes)
-    
-    os.remove(pdf_title)
+    create_pdf(formatted_data,pdf_title, "Estate Planning Form")
+    #TODO: uncomment this line for production 
+    # send_pdf_to_zapier(pdf_title,formatted_data.attributes)
+    #os.remove(pdf_title)
+
     logger.info("PDF sent to Zapier")
     return jsonify({"status": "ok", "data": data}),200 
 
-def create_pdf(data,pdf_title):
+def create_pdf(data,pdf_title,heading):
     #Todo: add type of form to top of pdf
     font_name = "Helvetica"
     font_size = 12
     c = canvas.Canvas(pdf_title, pagesize=letter)
     c.drawImage("title.jpeg", 25,725,width=200,height=60)
+    c.setFont(font_name, 28)
+    c.drawString(300, 740, heading)
     c.setFont(font_name, font_size)
     
     y = 710
@@ -119,9 +131,10 @@ def create_pdf(data,pdf_title):
         y = add_form_label(key,value,margin_left_x,y,c)
        
         #y -= 50
-
-    if asset_protection:
-        for key,value in data.assetProtection.items():
+    #TODO: Add the rest of the forms
+        
+    if estatePlanning:
+        for key,value in data.estatePlanning.items():
             if y < 20:
                 c.showPage()
                 c.drawImage("title.jpeg", 25,725,width=200,height=60)
@@ -129,9 +142,7 @@ def create_pdf(data,pdf_title):
             if isinstance(value, list):
                 value = ", ".join(value)
             y = add_form_label(key,value,margin_left_x ,y,c)
-            #y -= 50
-
-    if probate_intake:
+    elif probate_intake:
         for key,value in data.probateIntake.items():
             if y < 20:
                 c.showPage()
@@ -140,8 +151,16 @@ def create_pdf(data,pdf_title):
             if isinstance(value, list):
                 value = ", ".join(value)
             y = add_form_label(key,value,margin_left_x,y,c)
-            #y -= 50
 
+    elif personal_injury:
+        for key,value in data.probateIntake.items():
+            if y < 20:
+                c.showPage()
+                c.drawImage("title.jpeg", 25,725,width=200,height=60)
+                y = 715
+            if isinstance(value, list):
+                value = ", ".join(value)
+            y = add_form_label(key,value,margin_left_x,y,c)
     c.save()    
 
 def add_form_label(field_name,field_value, x, y, c):
