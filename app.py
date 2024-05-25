@@ -25,13 +25,8 @@ logger = logging.getLogger(__name__)
 def webhook():
     data = request.get_json()
     #write data to a file
-    formatted_data = RequestBody(data) 
+    logger.info("/webhook triggered")
     
-    pdf_title = f"{formatted_data.attributes.get('Full Name','')} intakeform.pdf"
-
-    create_pdf(formatted_data,pdf_title,"Client Intake Form") 
-    send_pdf_to_zapier(pdf_title,formatted_data.attributes)
-    os.remove(pdf_title)
 
     return jsonify({"status": "ok", "data": data}),200
 
