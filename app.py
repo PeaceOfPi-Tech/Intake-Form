@@ -133,6 +133,7 @@ def create_pdf(data,pdf_title,heading):
         #y -= 50
         
     if heading == "Estate Planning Form":
+        logger.info("Estate Planning Form")
         for key,value in data.estatePlanning.items():
             if y < 20:
                 c.showPage()
@@ -142,6 +143,7 @@ def create_pdf(data,pdf_title,heading):
                 value = ", ".join(value)
             y = add_form_label(key,value,margin_left_x ,y,c)
     elif heading == "Probate Intake Form":
+        logger.info("Probate Intake Form")
         for key,value in data.probateIntake.items():
             if y < 20:
                 c.showPage()
@@ -152,6 +154,7 @@ def create_pdf(data,pdf_title,heading):
             y = add_form_label(key,value,margin_left_x,y,c)
 
     elif heading == "Personal Injury Form":
+        logger.info("Personal Injury Form")
         for key,value in data.personalInjury.items():
             if y < 20:
                 c.showPage()
@@ -169,6 +172,7 @@ def create_pdf(data,pdf_title,heading):
             if isinstance(value, list):
                 value = ", ".join(value)
             y = add_form_label(key,value,margin_left_x,y,c)
+
     c.save()    
 
 def add_form_label(field_name,field_value, x, y, c):
