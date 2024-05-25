@@ -72,7 +72,12 @@ class RequestBody:
             "Any other concerns or questions you want addressed at the meeting?" : data.get("Any other concerns or questions you want addressed at the meeting?"),
         }
         accident_info = data.get("Accident Information", {})
+        if isinstance(accident_info, str):
+            accident_info = {}
         decedent_info = data.get("Defendant's Information", {})
+        if isinstance(decedent_info, str):
+            decedent_info = {}
+        
         self.personalInjury = {
             "Were you involved in an accident": data.get("Were you involved in an accident? "),
             "Type of accident": data.get("Type of Accident"),
