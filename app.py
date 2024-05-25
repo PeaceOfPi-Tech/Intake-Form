@@ -29,7 +29,7 @@ def webhook():
     
     pdf_title = f"{formatted_data.attributes.get('Full Name','')} intakeform.pdf"
 
-    create_pdf(formatted_data,pdf_title) 
+    create_pdf(formatted_data,pdf_title,"Client Intake Form") 
     send_pdf_to_zapier(pdf_title,formatted_data.attributes)
     os.remove(pdf_title)
 
@@ -37,6 +37,9 @@ def webhook():
 
 @app.route('/webhook/general', methods=['POST'])
 def webhook_general():
+    global probate_intake,personal_injury,estatePlanning
+    probate_intake,personal_injury,estatePlanning = False,False,False
+
     data = request.get_json()
     formatted_data = RequestBody(data) 
     
@@ -51,7 +54,8 @@ def webhook_general():
 #probate intake form
 @app.route('/webhook/probate', methods=['POST'])
 def webhook_probate():
-    global probate_intake
+    global probate_intake,personal_injury,estatePlanning
+    probate_intake,personal_injury,estatePlanning = False,False,False
     probate_intake = True
 
     data = request.get_json()
@@ -69,7 +73,9 @@ def webhook_probate():
 #personal injury form
 @app.route('/webhook/personalinjury', methods=['POST'])
 def webhook_personal_injury():
-    global personal_injury
+    global probate_intake,personal_injury,estatePlanning
+    probate_intake,personal_injury,estatePlanning = False,False,False
+
     personal_injury = True 
 
     data = request.get_json()
@@ -85,7 +91,9 @@ def webhook_personal_injury():
 
 @app.route('/webhook/estateplanning', methods=['POST'])
 def webhook_estate_planning():
-    global estatePlanning 
+    global probate_intake,personal_injury,estatePlanning
+    probate_intake,personal_injury,estatePlanning = False,False,False
+
     estatePlanning = True 
 
     data = request.get_json()
