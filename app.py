@@ -55,7 +55,8 @@ def webhook_general():
 @app.route('/webhook/probate', methods=['POST'])
 def webhook_probate():
     global probate_intake,personal_injury,estatePlanning
-    probate_intake,personal_injury,estatePlanning = False,False,False
+    personal_injury,estatePlanning = False,False
+
     probate_intake = True
 
     data = request.get_json()
@@ -74,7 +75,7 @@ def webhook_probate():
 @app.route('/webhook/personalinjury', methods=['POST'])
 def webhook_personal_injury():
     global probate_intake,personal_injury,estatePlanning
-    probate_intake,personal_injury,estatePlanning = False,False,False
+    probate_intake,estatePlanning = False,False
 
     personal_injury = True 
 
@@ -92,7 +93,7 @@ def webhook_personal_injury():
 @app.route('/webhook/estateplanning', methods=['POST'])
 def webhook_estate_planning():
     global probate_intake,personal_injury,estatePlanning
-    probate_intake,personal_injury,estatePlanning = False,False,False
+    probate_intake,personal_injury= False,False
 
     estatePlanning = True 
 
@@ -107,6 +108,7 @@ def webhook_estate_planning():
     return jsonify({"status": "ok", "data": data}),200 
 
 def create_pdf(data,pdf_title,heading):
+    logger.info("Flags: probate_intake: %s, personal_injury: %s, estatePlanning: %s",probate_intake,personal_injury,estatePlanning)
     font_name = "Helvetica"
     font_size = 12
     c = canvas.Canvas(pdf_title, pagesize=letter)
