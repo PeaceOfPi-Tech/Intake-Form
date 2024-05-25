@@ -108,7 +108,6 @@ def webhook_estate_planning():
     return jsonify({"status": "ok", "data": data}),200 
 
 def create_pdf(data,pdf_title,heading):
-    logger.info("Flags: probate_intake: %s, personal_injury: %s, estatePlanning: %s",probate_intake,personal_injury,estatePlanning)
     font_name = "Helvetica"
     font_size = 12
     c = canvas.Canvas(pdf_title, pagesize=letter)
@@ -133,7 +132,7 @@ def create_pdf(data,pdf_title,heading):
        
         #y -= 50
         
-    if estatePlanning:
+    if heading == "Estate Planning Form":
         for key,value in data.estatePlanning.items():
             if y < 20:
                 c.showPage()
@@ -142,7 +141,7 @@ def create_pdf(data,pdf_title,heading):
             if isinstance(value, list):
                 value = ", ".join(value)
             y = add_form_label(key,value,margin_left_x ,y,c)
-    elif probate_intake:
+    elif heading == "Probate Intake Form":
         for key,value in data.probateIntake.items():
             if y < 20:
                 c.showPage()
@@ -152,7 +151,7 @@ def create_pdf(data,pdf_title,heading):
                 value = ", ".join(value)
             y = add_form_label(key,value,margin_left_x,y,c)
 
-    elif personal_injury:
+    elif heading == "Personal Injury Form":
         for key,value in data.personalInjury.items():
             if y < 20:
                 c.showPage()
